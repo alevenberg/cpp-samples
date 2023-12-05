@@ -20,23 +20,41 @@
 #include <opentelemetry/sdk/trace/batch_span_processor_options.h>
 #include <opentelemetry/sdk/trace/processor.h>
 #include <opentelemetry/sdk/trace/tracer_provider_factory.h>
+#include <opentelemetry/sdk/trace/tracer_provider.h>
 #include <opentelemetry/trace/provider.h>
 #include <iostream>
 
 // Create a few namespace aliases to make the code easier to read.
 namespace gc = ::google::cloud;
 namespace otel = gc::otel;
+namespace trace_sdk = ::opentelemetry::sdk::trace;
+namespace trace = ::opentelemetry::trace;
 
-void ConfigureCloudTrace(ParseResult const& args) {
+namespace {
+
+void ConfigureCloudTraceTracer(ParseResult const& args) {
   auto exporter = otel::MakeTraceExporter(gc::Project(args.project_id));
-  opentelemetry::sdk::trace::BatchSpanProcessorOptions span_options;
+  trace_sdk::BatchSpanProcessorOptions span_options;
   span_options.max_queue_size = args.max_queue_size;
-  auto processor = opentelemetry::sdk::trace::BatchSpanProcessorFactory::Create(
+  auto processor = trace_sdk::BatchSpanProcessorFactory::Create(
       std::move(exporter), span_options);
-  auto provider = opentelemetry::sdk::trace::TracerProviderFactory::Create(
+  auto provider = trace_sdk::TracerProviderFactory::Create(
       std::move(processor));
-  opentelemetry::trace::Provider::SetTracerProvider(std::move(provider));
+  trace::Provider::SetTracerProvider(std::move(provider));
 }
+
+// Wait for the traces to be exported or else there might be undefined behavior.
+void Cleanup(){
+  auto provider = trace::Provider::GetTracerProvider();
+  if (provider) {
+    static_cast<trace_sdk::TracerProvider *>(provider.get())->ForceFlush();
+  }
+
+  std::shared_ptr<trace::TracerProvider> none;
+  trace::Provider::SetTracerProvider(none);
+}
+
+} // namespace
 
 int main(int argc, char* argv[]) try {
   auto args = ParseArguments(argc, argv);
@@ -46,11 +64,13 @@ int main(int argc, char* argv[]) try {
   std::cout << "Using project `" << args.project_id << "` and topic `"
             << args.topic_id << "`\n";
 
-  ConfigureCloudTrace(args);
+  ConfigureCloudTraceTracer(args);
 
   auto publisher = CreatePublisher(args);
 
   Publish(publisher, args);
+
+  Cleanup();
 
   return 0;
 } catch (google::cloud::Status const& status) {
