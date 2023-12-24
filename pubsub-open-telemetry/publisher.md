@@ -6,21 +6,42 @@ telemetry data.
 
 For setup instructions, refer to the [README.md](README.md).
 
-## Cloud Trace
+## Example traces
 
-### Example traces
+A trace follows the life of a message. When publishing a single message, we will produce two traces:
+- Create: my-topic create
+  - (optional) Flow control: publisher flow control
+  - Batching: publisher batching
+- Batch publish:  my-topic publish
+  - (optional) Batch publish <N>: publish #<N>
+  - Publish gRPC: google.pubsub.v1.Publisher/Publish
 
+The "my-topic publish" is only generated for calls where the publish rpc occurs. This means there is a 1-to-many relationship between the "my-topic publish" and "my-topic create" spans. It stores the spans for each of the "my-topic create" calls that initiated the rpc as links. Since this span is completed asynchronously, it is a root span (i.e., the publish span is not the parent).
+
+The google.pubsub.v1.Publisher/Publish span represents when a request has been made to the gRPC stub layer.
+
+### Cloud Trace
 To find the traces, navigate to the Cloud Trace UI.
 
-#### Publish trace
+#### With OTel ABI 1.0
+##### Publish trace
 
-![Screenshot of the publish span in the Cloud Trace UI.](assets/publish_span.png)
-![Screenshot of the publish span in the Cloud Trace UI.](assets/publish_span.png)
+![Screenshot of the publish span in the Cloud Trace UI compiled with OTel abi 1.0.](assets/publish_span_1.png)
 
-#### Create trace
+##### Create trace
 
-![Screenshot of the create span in the Cloud Trace UI.](assets/create_span.png)
-![Screenshot of the create span in the Cloud Trace UI.](assets/create_span.png)
+![Screenshot of the create span in the Cloud Trace UI compiled with OTel abi 1.0.](assets/create_span_1.png)
+
+#### With OTel ABI 2.0
+OTel ABI 2.0 adds the ability to add links after span creation, which changes the telemetery data produced. Instead of adding the publish span's trace and span id as attributes, we create a link between the publish and create span.
+
+##### Publish trace
+
+![Screenshot of the publish span in the Cloud Trace UI compiled with OTel abi 2.0.](assets/publish_span_2.png)
+
+##### Create trace
+
+![Screenshot of the create span in the Cloud Trace UI compiled with OTel abi 2.0.](assets/create_span_2.png)
 
 ## Build and run
 
