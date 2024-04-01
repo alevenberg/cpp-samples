@@ -28,6 +28,7 @@ set(samples
     getting-started/update
     iot/mqtt-ciotc
     populate-bucket
+    pubsub-avro
     setup
     speech/api)
 
