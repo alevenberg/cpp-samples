@@ -8,6 +8,9 @@
         "name": "google-cloud-cpp",
         "default-features": false,
         "features": ["batch"]
+      },
+      {
+        "name": "nlohmann-json"
       }
     ]
   }

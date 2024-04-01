@@ -22,13 +22,7 @@ set(PACKAGE_BUGREPORT
 project(cpp-samples-batch CXX)
 
 find_package(google_cloud_cpp_batch REQUIRED)
-find_package(protobuf CONFIG REQUIRED)
-find_package(Threads)
+find_package(nlohmann_json CONFIG REQUIRED)
 
-protobuf_generate_cpp(SCHEMA_SRCS SCHEMA_HDRS schema.proto)
-
-add_executable("single_threaded_write" ${SCHEMA_SRCS} single_threaded_write.cc)
-target_include_directories(single_threaded_write SYSTEM
-                           PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries("single_threaded_write" PRIVATE google-cloud-cpp::bigquery
-                                                      Threads::Threads)
+add_executable(simple simple.cc)
+target_link_libraries("simple" PRIVATE google-cloud-cpp::batch nlohmann_json::nlohmann_json)
