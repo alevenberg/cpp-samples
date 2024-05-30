@@ -1,0 +1,20 @@
+{
+    "type": "record",
+    "name": "__root__",
+    "fields": [
+        {
+            "name": "name",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "total",
+            "type": [
+                "null",
+                "long"
+            ]
+        }
+    ]
+}

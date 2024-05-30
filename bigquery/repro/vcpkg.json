@@ -1,0 +1,8 @@
+{
+  "name": "segfault-repro",
+  "version-string": "unversioned",
+  "description": "A simple repro for the avro GenericDatum segfault",
+  "dependencies": [
+    "avro-cpp"
+  ]
+}
