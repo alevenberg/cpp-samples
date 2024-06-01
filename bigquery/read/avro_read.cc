@@ -47,28 +47,26 @@ avro::ValidSchema GetAvroSchema(
 }
 
 void ProcessRowsInAvroFormat(
-    ::google::cloud::bigquery::storage::v1::AvroSchema const& schema,
+    avro::ValidSchema const& schema,
     ::google::cloud::bigquery::storage::v1::AvroRows const& rows,
     std::int64_t row_count) {
-  avro::ValidSchema valid_schema = GetAvroSchema(schema);
-
   // Get an avro reader.
-  // std::istringstream iss(rows.serialized_binary_rows(), std::ios::binary);
-  // std::unique_ptr<avro::InputStream> in = avro::istreamInputStream(iss);
-  // avro::DecoderPtr d = avro::validatingDecoder(valid_schema,
-  // avro::binaryDecoder()); avro::GenericReader gr(valid_schema, d);
-  // d->init(*in);
-
-  avro::DecoderPtr decoder =
-      avro::validatingDecoder(valid_schema, avro::binaryDecoder());
-  std::istringstream row_bytes(rows.serialized_binary_rows(), std::ios::binary);
-  std::unique_ptr<avro::InputStream> in = avro::istreamInputStream(row_bytes);
-  avro::GenericReader reader(valid_schema, decoder);
-  decoder->init(*in);
-  avro::GenericDatum datum(valid_schema);
+  std::istringstream iss(rows.serialized_binary_rows(), std::ios::binary);
+  std::unique_ptr<avro::InputStream> in = avro::istreamInputStream(iss);
+  avro::DecoderPtr d = avro::validatingDecoder(schema, avro::binaryDecoder());
+  avro::GenericReader gr(schema, d);
+  d->init(*in);
 
   // Read rows using into a generic datum.
-  // avro::GenericDatum datum(valid_schema);
+  avro::GenericDatum datum(schema);
+
+  // avro::DecoderPtr decoder =
+  //     avro::validatingDecoder(valid_schema, avro::binaryDecoder());
+  // std::istringstream row_bytes(rows.serialized_binary_rows(),
+  // std::ios::binary); std::unique_ptr<avro::InputStream> in =
+  // avro::istreamInputStream(row_bytes); avro::GenericReader
+  // reader(valid_schema, decoder); decoder->init(*in); avro::GenericDatum
+  // datum(valid_schema);
 
   // for (auto i = 0; i < row_count; ++i) {
   //   reader.read(*decoder, datum, valid_schema);
@@ -135,20 +133,36 @@ int main(int argc, char* argv[]) try {
                                read_session, kMaxReadStreams);
   if (!session) throw std::move(session).status();
 
+  // Get Avro schema.
+  avro::ValidSchema valid_schema = GetAvroSchema(session->avro_schema());
+
   // Read rows from the ReadSession.
   constexpr int kRowOffset = 0;
   auto read_rows = client.ReadRows(session->streams(0).name(), kRowOffset);
 
   std::int64_t num_rows = 0;
-  for (auto const& row : read_rows) {
-    if (row.ok()) {
-      num_rows += row->row_count();
-      ProcessRowsInAvroFormat(session->avro_schema(), row->avro_rows(),
+  std::int64_t num_responses = 0;
+  for (auto const& read_rows_response : read_rows) {
+    if (read_rows_response.ok()) {
+      ProcessRowsInAvroFormat(valid_schema, read_rows_response->avro_rows(),
                               num_rows);
+      // std::shared_ptr<arrow::RecordBatch> record_batch =
+      // GetAvroRows(read_rows_response->arrow_record_batch(), schema);
+
+      // if (record_batch_count == 0) {
+      //   PrintColumnNames(record_batch);
+      // }
+
+      // ProcessRecordBatch(schema, record_batch, num_rows);
+      num_rows += read_rows_response->row_count();
+      ++num_responses;
     }
   }
 
-  std::cout << num_rows << " rows read from table: " << table_name << "\n";
+  std::cout << std::format(
+      "Read {} responses(s) and {} total row(s) from table: {}\n",
+      num_responses, num_rows, table_id);
+
   return 0;
 } catch (google::cloud::Status const& status) {
   std::cerr << "google::cloud::Status thrown: " << status << "\n";
