@@ -31,10 +31,22 @@ namespace {
 avro::ValidSchema GetAvroSchema(
     ::google::cloud::bigquery::storage::v1::AvroSchema const& schema) {
   // Create a valid reader schema.
-  std::istringstream schema_bytes(schema.schema(), std::ios::binary);
+  std::istringstream schema_bytes(schema.schema());
   avro::ValidSchema valid_schema;
-  avro::compileJsonSchema(schema_bytes, valid_schema);
-
+  std::string error;
+  // std::cout << schema_bytes.str();
+  if (!avro::compileJsonSchema(schema_bytes, valid_schema, error)) {
+    std::cout << "Error reading schema: "<<error << "\n"; 
+  }
+  // [optional] Write the schema to a file. This could be useful if you want to
+  // re-use the schema elsewhere.
+  std::ofstream output2("schema.bin");
+  if (output2.is_open()) {
+    output2 << schema.schema();
+    output2.close();
+  } else {
+    std::cerr << "Error opening the file!" << std::endl;
+  }
   // [optional] Write the schema to a file. This could be useful if you want to
   // re-use the schema elsewhere.
   std::ofstream output("schema.avsc");

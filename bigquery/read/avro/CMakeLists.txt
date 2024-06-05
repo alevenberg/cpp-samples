@@ -15,7 +15,7 @@
 # ~~~
 
 cmake_minimum_required(VERSION 3.20)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 11)
 
 # Define the project name and where to report bugs.
 set(PACKAGE_BUGREPORT
@@ -28,3 +28,4 @@ find_package(unofficial-avro-cpp CONFIG REQUIRED)
 add_executable(avro_read avro_read.cc)
 target_link_libraries(avro_read PRIVATE google-cloud-cpp::bigquery
                                         unofficial::avro-cpp::avrocpp)
+target_compile_features(avro_read PRIVATE cxx_std_11)
