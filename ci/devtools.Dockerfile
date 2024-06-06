@@ -28,13 +28,13 @@ RUN apt update \
         cmake \
         curl \
         flex \
-        llvm \ 
+        llvm \
         ninja-build \
         pkg-config \
         python3 \
         tar \
         zip \
-        unzip 
+        unzip
 
 RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | \
     tee -a /etc/apt/sources.list.d/google-cloud-sdk.list \

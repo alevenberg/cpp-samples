@@ -1,0 +1,39 @@
+{
+    "taskGroups": [
+        {
+            "taskSpec": {
+                "runnables": [
+                    {
+                        "script": {
+                            "text": "google_mpi_tuning --nosmt; google_install_mpi --intel_mpi;"
+                        }
+                    },
+                    { "barrier": {} },
+                    {
+                        "script": {
+                            "text":
+                                "if [ $BATCH_TASK_INDEX = 0 ]; then
+                                mpirun -hostfile $BATCH_HOSTS_FILE -np 3 hostname;
+                                fi"
+                        }
+                    },
+                    { "barrier": {} }
+                ]
+            },
+            "taskCount": 3,
+            "taskCountPerNode": 1,
+            "requireHostsFile": true,
+            "permissiveSsh": true
+        }
+    ],
+    "allocationPolicy": {
+        "instances": [
+            {
+                "instanceTemplate": "example-template-job-uses-mpi"
+            }
+        ]
+    },
+    "logsPolicy": {
+        "destination": "CLOUD_LOGGING"
+    }
+}
